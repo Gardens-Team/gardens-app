@@ -1,0 +1,18 @@
+name = "gardens-api"
+compatibility_date = "2023-01-01"
+main = "src/index.ts"
+
+[[d1_databases]]
+binding = "DB" # available in your Worker on env.DB
+database_name = "gardens-db"
+database_id = "94bdd3c2-5114-4c4d-9836-57bff28ee3cb"
+
+[triggers]
+crons = ["0 * * * *"] # Run every hour
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "garden-logos"
+
+[vars]
+BUCKET_PUBLIC_URL = "garden-logos.youraccount.r2.dev"  # Update with your actual public URL

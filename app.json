@@ -1,0 +1,110 @@
+{
+  "expo": {
+    "name": "Gardens",
+    "slug": "gardens",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ece0cb"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.usegardens.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "This app uses your photo library to set your profile picture.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to find nearby devices.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to find nearby users and markers on the map.",
+        "NSMicrophoneUsageDescription": "This app uses your microphone to record voice notes."
+      },
+      "associatedDomains": [
+        "applinks:gardens.app",
+        "applinks:*.gardens.app"
+      ]
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ece0cb"
+      },
+      "package": "com.usegardens.app",
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "*.gardens.app",
+              "pathPrefix": "/garden/invite"
+            },
+            {
+              "scheme": "gardens",
+              "host": "garden",
+              "pathPrefix": "/invite"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.ico"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-image-picker",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      "expo-sqlite",
+      "expo-crypto",
+      "expo-av",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Gardens to use your location to find nearby users and markers."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos to upload garden logos."
+        }
+      ],
+      "expo-router"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "156948c3-6dee-41d0-88e7-e81335008877"
+      },
+      "enableBridgeless": true,
+      "usesPrebuild": true,
+      "devServer": { "hostname": "localhost" }
+    },
+    "owner": "comradecrashout",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/a21d0253-7735-4775-910d-61bfeab283f1"
+    },
+    "scheme": "laab"
+  }
+}

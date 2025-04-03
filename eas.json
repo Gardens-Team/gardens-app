@@ -1,0 +1,53 @@
+{
+  "cli": {
+    "version": ">= 7.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "default"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug",
+        "withoutCredentials": true,
+        "cache": {
+          "key": "gradle-development-{{ checksum \"android/build.gradle\" }}-{{ checksum \"android/app/build.gradle\" }}"
+        }
+      },
+      "prebuildCommand": "npx expo prebuild --clean"
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "default"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "withoutCredentials": true,
+        "cache": {
+          "key": "gradle-preview-{{ checksum \"android/build.gradle\" }}-{{ checksum \"android/app/build.gradle\" }}"
+        }
+      },
+      "prebuildCommand": "npx expo prebuild --clean"
+    },
+    "production": {
+      "ios": {
+        "resourceClass": "default"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "cache": {
+          "key": "gradle-production-{{ checksum \"android/build.gradle\" }}-{{ checksum \"android/app/build.gradle\" }}"
+        }
+      },
+      "prebuildCommand": "npx expo prebuild --clean"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+} 

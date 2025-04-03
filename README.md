@@ -1,3 +1,5 @@
+![](./assets/cover.png)
+
 # Gardens: Secure Messaging App
 
 Gardens is a React Native application built with Expo for secure, end-to-end encrypted 1:1 messaging and group communication. It focuses on providing a platform for any time of organizating and communization without questions asked.
@@ -38,35 +40,126 @@ nerves/
 
 ## Data Models
 
-### Users (Local)
-- id: string
+### Local Storage (SQLite)
+
+#### Users
+- id: string (Primary Key)
 - username: string
 - profile_pic: string (optional)
 - visible: boolean
+- public_key: string
+- private_key: string
+- bio: string (optional)
+- location: string (optional)
+- email: string (optional)
+- phone: string (optional)
+- created_at: number (timestamp)
+- updated_at: number (timestamp)
 
-### Encrypted Messages (Cloudflare D1)
-- id: string
-- sender: string
-- recipient: string (for direct messages)
-- garden: string (for group messages)
-- content: string (encrypted)
+#### User Presence
+- user_id: string (Primary Key)
+- status: string
+- last_active: number (timestamp)
+- timestamp: number (timestamp)
 
-### Gardens (Cloudflare D1)
-- id: string
+### Cloud Storage (Cloudflare D1)
+
+#### Gardens
+- id: string (Primary Key)
+- name: string
+- description: string (optional)
+- logoData: BLOB (optional)
+- coverImageData: BLOB (optional)
+- city: string
+- state: string
+- latitude: number (optional)
+- longitude: number (optional)
+- creator_id: string
+- creator_username: string
+- creator_profile_pic: string
 - visible: boolean
-- logo: string
-- latitude
-- longitude
+- is_private: boolean
+- oauth_enabled: boolean
+- oauth_provider_id: string (optional)
+- oauth_client_id: string (optional)
+- oauth_client_secret: string (optional)
+- tags: string (JSON array)
+- member_count: number
+- created_at: number (timestamp)
+- updated_at: number (timestamp)
 
-### Channels
+#### Channels
+- id: string (Primary Key)
+- garden_id: string (Foreign Key)
+- name: string
+- description: string (optional)
+- is_default: boolean
+- is_administrative: boolean
+- created_at: number (timestamp)
+- updated_at: number (timestamp)
 
-### Timeouts
+#### Messages
+- id: string (Primary Key)
+- sender: string
+- recipient: string (optional)
+- garden: string (optional)
+- channel_id: string (optional, Foreign Key)
+- content: string (encrypted)
+- content_type: string (enum: text, image, video, audio, file, system)
+- sent: boolean
+- public_key: string
+- delivered: boolean
+- read: boolean
+- self_destruct_enabled: boolean
+- self_destruct_at: number (timestamp, optional)
+- created_at: number (timestamp)
+- updated_at: number (timestamp)
+- reply_to_id: string (optional, Foreign Key)
 
-### Lockdowns
+#### Memberships
+- garden_id: string (Composite Primary Key)
+- user_id: string (Composite Primary Key)
+- username: string
+- public_key: string
+- role: string (enum: member, moderator, admin, founder)
+- banned: boolean
+- muted: boolean
+- kicked: boolean
+- joined_at: number (timestamp)
+- banned_at: number (timestamp, optional)
+- kicked_at: number (timestamp, optional)
+- muted_at: number (timestamp, optional)
 
-### Slowmodes
+#### Requests
+- garden_id: string (Composite Primary Key)
+- user_id: string (Composite Primary Key)
+- username: string
+- message: string (optional)
 
-### Memberships
+#### Moderation Features
+- Lockdowns: Channel-specific lockdowns
+- Slow Modes: Channel-specific message rate limiting
+
+## Database Architecture
+
+The application uses a hybrid database approach:
+
+1. **Local Storage (SQLite)**
+   - Handles user data, encryption keys, and presence information
+   - Optimized for offline-first functionality
+   - Manages local caching and state
+
+2. **Cloud Storage (Cloudflare D1)**
+   - Stores encrypted messages and garden data
+   - Handles user relationships and permissions
+   - Manages moderation features
+
+### Security Features
+- End-to-end encryption for all messages
+- Public/private key pairs for user authentication
+- Role-based access control for garden management
+- Self-destructing messages
+- Channel-specific moderation tools
 
 ## Getting Started
 

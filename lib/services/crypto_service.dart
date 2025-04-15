@@ -1,127 +1,125 @@
+// lib/services/crypto_service.dart
+import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'package:uuid/uuid.dart';
+import '../models/device.dart';
+import '../utils/ffi_helpers.dart';
 
-// FFI signature for the core-crypto library
-typedef CoreCryptoInitializeFn = Int32 Function(Pointer<Utf8>);
-typedef CoreCryptoInitialize = int Function(Pointer<Utf8>);
-
-typedef CreateMlsGroupFn = Pointer<Utf8> Function(Pointer<Utf8>);
-typedef CreateMlsGroup = Pointer<Utf8> Function(Pointer<Utf8>);
-
-typedef EncryptMessageFn = Pointer<Utf8> Function(Pointer<Utf8>, Pointer<Utf8>);
-typedef EncryptMessage = Pointer<Utf8> Function(Pointer<Utf8>, Pointer<Utf8>);
-
-typedef DecryptMessageFn = Pointer<Utf8> Function(Pointer<Utf8>, Pointer<Utf8>);
-typedef DecryptMessage = Pointer<Utf8> Function(Pointer<Utf8>, Pointer<Utf8>);
-
-class CoreCryptoService {
-  static final CoreCryptoService _instance = CoreCryptoService._internal();
-  factory CoreCryptoService() => _instance;
+class CryptoService {
+  static final CryptoService _instance = CryptoService._internal();
+  factory CryptoService() => _instance;
   
-  late final DynamicLibrary _coreCryptoLib;
-  late final CoreCryptoInitialize _initialize;
-  late final CreateMlsGroup _createMlsGroup;
-  late final EncryptMessage _encryptMessage;
-  late final DecryptMessage _decryptMessage;
-  bool _isInitialized = false;
+  final _secureStorage = const FlutterSecureStorage();
+  
+  CryptoService._internal();
 
-  CoreCryptoService._internal();
-
-  Future<void> initialize() async {
-    if (_isInitialized) return;
-
-    // Load the dynamic library based on platform
-    if (Platform.isAndroid) {
-      _coreCryptoLib = DynamicLibrary.open('libcore_crypto.so');
-    } else if (Platform.isIOS) {
-      _coreCryptoLib = DynamicLibrary.process();
-    } else if (Platform.isWindows) {
-      _coreCryptoLib = DynamicLibrary.open('core_crypto.dll');
-    } else if (Platform.isMacOS) {
-      _coreCryptoLib = DynamicLibrary.open('libcore_crypto.dylib');
-    } else if (Platform.isLinux) {
-      _coreCryptoLib = DynamicLibrary.open('libcore_crypto.so');
-    } else {
-      throw UnsupportedError('Unsupported platform');
-    }
-
-    // Get references to the native functions
-    _initialize = _coreCryptoLib
-        .lookup<NativeFunction<CoreCryptoInitializeFn>>('core_crypto_initialize')
-        .asFunction();
-        
-    _createMlsGroup = _coreCryptoLib
-        .lookup<NativeFunction<CreateMlsGroupFn>>('create_mls_group')
-        .asFunction();
-        
-    _encryptMessage = _coreCryptoLib
-        .lookup<NativeFunction<EncryptMessageFn>>('encrypt_message')
-        .asFunction();
-        
-    _decryptMessage = _coreCryptoLib
-        .lookup<NativeFunction<DecryptMessageFn>>('decrypt_message')
-        .asFunction();
-
-    // Initialize the library with storage path
-    final directory = await getApplicationDocumentsDirectory();
-    final storagePath = '${directory.path}/crypto_storage';
-    final result = _initialize(storagePath.toNativeUtf8());
+  // Key constants
+  static const String _privateKeyKey = 'private_key';
+  static const String _publicKeyKey = 'public_key';
+  static const String _deviceIdKey = 'device_id';
+  
+  // This would be replaced with actual MLS library FFI
+  Future<Device> initializeDevice(String userId) async {
+    // Check if we already have a device ID and keys
+    final existingDeviceId = await _secureStorage.read(key: _deviceIdKey);
     
-    if (result != 0) {
-      throw Exception('Failed to initialize core-crypto library');
+    if (existingDeviceId != null) {
+      final credential = await _getCredential();
+      if (credential != null) {
+        return Device(
+          id: existingDeviceId,
+          identityId: userId,
+          credential: credential,
+          createdAt: DateTime.now(), // We don't store this, so using current time
+        );
+      }
     }
     
-    _isInitialized = true;
+    // Generate new device and keys
+    final deviceId = const Uuid().v4();
+    await _secureStorage.write(key: _deviceIdKey, value: deviceId);
+    
+    // In a real implementation, this would generate proper MLS credentials
+    final keys = await _generateKeyPair();
+    final credential = await _createCredential(keys.item1, keys.item2);
+    
+    // Store keys securely
+    await _secureStorage.write(key: _privateKeyKey, value: keys.item1);
+    await _secureStorage.write(key: _publicKeyKey, value: keys.item2);
+    
+    return Device(
+      id: deviceId,
+      identityId: userId,
+      credential: credential,
+      createdAt: DateTime.now(),
+    );
   }
 
-  // Create a new MLS group for a garden
-  Future<String> createMlsGroup(String gardenId) async {
-    if (!_isInitialized) await initialize();
+  // Placeholder for actual MLS key generation
+  Future<(String, String)> _generateKeyPair() async {
+    // In a real implementation, this would use actual cryptographic functions
+    final privateKey = const Uuid().v4();
+    final publicKey = const Uuid().v4();
     
-    final gardenIdNative = gardenId.toNativeUtf8();
-    final resultPointer = _createMlsGroup(gardenIdNative);
-    final result = resultPointer.toDartString();
+    return (privateKey, publicKey);
+  }
+  
+  Future<Uint8List?> _getCredential() async {
+    final privateKey = await _secureStorage.read(key: _privateKeyKey);
+    final publicKey = await _secureStorage.read(key: _publicKeyKey);
     
-    calloc.free(gardenIdNative);
-    calloc.free(resultPointer);
+    if (privateKey == null || publicKey == null) return null;
     
-    return result;
+    return _createCredential(privateKey, publicKey);
+  }
+  
+  Future<Uint8List> _createCredential(String privateKey, String publicKey) async {
+    // In a real implementation, this would create an actual MLS credential
+    final credential = '$privateKey:$publicKey';
+    return Uint8List.fromList(credential.codeUnits);
   }
 
-  // Encrypt a message using MLS
-  Future<String> encryptMessage(String groupId, String message) async {
-    if (!_isInitialized) await initialize();
-    
-    final groupIdNative = groupId.toNativeUtf8();
-    final messageNative = message.toNativeUtf8();
-    
-    final resultPointer = _encryptMessage(groupIdNative, messageNative);
-    final result = resultPointer.toDartString();
-    
-    calloc.free(groupIdNative);
-    calloc.free(messageNative);
-    calloc.free(resultPointer);
-    
-    return result;
+  // Encryption for MLS messages
+  Future<Uint8List> encryptMessage(String message, Uint8List groupInfo) async {
+    // In a real implementation, this would use actual MLS encryption
+    // This is just a placeholder
+    final encrypted = 'ENCRYPTED:$message';
+    return Uint8List.fromList(encrypted.codeUnits);
   }
-
-  // Decrypt a message using MLS
-  Future<String> decryptMessage(String groupId, String encryptedMessage) async {
-    if (!_isInitialized) await initialize();
-    
-    final groupIdNative = groupId.toNativeUtf8();
-    final encryptedMessageNative = encryptedMessage.toNativeUtf8();
-    
-    final resultPointer = _decryptMessage(groupIdNative, encryptedMessageNative);
-    final result = resultPointer.toDartString();
-    
-    calloc.free(groupIdNative);
-    calloc.free(encryptedMessageNative);
-    calloc.free(resultPointer);
-    
-    return result;
+  
+  // Decryption for MLS messages
+  Future<String?> decryptMessage(Uint8List ciphertext, Uint8List groupInfo) async {
+    // In a real implementation, this would use actual MLS decryption
+    // This is just a placeholder
+    final encryptedText = String.fromCharCodes(ciphertext);
+    if (encryptedText.startsWith('ENCRYPTED:')) {
+      return encryptedText.substring('ENCRYPTED:'.length);
+    }
+    return null;
+  }
+  
+  // Creating an MLS group
+  Future<Uint8List> createGroup(String groupId) async {
+    // In a real implementation, this would use actual MLS group creation
+    // This is just a placeholder
+    final groupInfo = 'MLS_GROUP:$groupId';
+    return Uint8List.fromList(groupInfo.codeUnits);
+  }
+  
+  // Adding a member to an MLS group
+  Future<Uint8List> addMemberToGroup(Uint8List groupInfo, Uint8List memberCredential) async {
+    // In a real implementation, this would use actual MLS group operations
+    // This is just a placeholder
+    final groupInfoStr = String.fromCharCodes(groupInfo);
+    final memberStr = String.fromCharCodes(memberCredential);
+    final updatedGroupInfo = '$groupInfoStr:MEMBER:$memberStr';
+    return Uint8List.fromList(updatedGroupInfo.codeUnits);
   }
 }

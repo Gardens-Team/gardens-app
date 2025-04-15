@@ -12,16 +12,6 @@ CREATE TABLE users (
 );
 
 -- Devices registered to identities (MLS clients)
-CREATE TABLE devices (
-  id TEXT PRIMARY KEY,            -- device ID (e.g. UUIDv7)
-  identity_id TEXT NOT NULL,      -- foreign key to identities
-  credential BLOB NOT NULL,       -- public key or MLS credential bundle
-  created_at TEXT DEFAULT (datetime('now')),
-
-  FOREIGN KEY (identity_id) REFERENCES identities(id) ON DELETE CASCADE
-);
-
--- Devices registered to identities (MLS clients)
 CREATE TABLE apps (
   id TEXT PRIMARY KEY,            -- device ID (e.g. UUIDv7)
   garden_id TEXT NOT NULL,      -- foreign key to identities
